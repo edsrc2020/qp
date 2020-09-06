@@ -1,0 +1,123 @@
+.TH "QP" "1" "August 2020" "QP 2.0" "Command Line Media Player"
+.nh
+.ad l
+.SH "NAME"
+qp \- Command Line Media Player
+.SH "SYNOPSIS"
+.B "qp [-a] [-g range] [-i] [-l] [-p] [-t track]"
+file
+.br
+.B "qp -T"
+files...
+.br
+.B "qp -v"
+.SH "DESCRIPTION"
+This program plays media files from the command line.
+.PP
+The
+.B "-i"
+option invokes interactive mode, which turns this program into a GUI
+application, providing a very light-weight method of playing media files.
+In this mode, a window with a movie controller is presented, allowing
+complete interactive control of the playback.
+.PP
+If interactive mode is not requested, the file is played sequentially with
+minimal user interaction.  The program begins to play immediately on
+startup, and terminates automatically when playing finishes.  The user can
+terminate the program early (for example, by keyboard interrupt with
+Control-C).  In this mode, if only audio is being played, no visual
+indication of any kind is given.
+.SH "OPTIONS"
+.TP
+.B "-a"
+Include only audio tracks for playback.  All other tracks are excluded.
+.TP
+.B "-g range"
+Play a segment of the file, instead of the entire file.  This option can be
+given multiple times, resulting in a concatenation of all ranges specified,
+in the order that they are given.
+.IP
+A range specification has the form:
+.IP
+   hh:mm:ss[.fff]-hh:mm:ss[.fff][xn]
+.IP
+The two time values specify the start and end of the segment.  The optional
+".fff" specifies milliseconds, allowing very precise segment selection.
+.IP
+The optional "xn" trailer is only significant in non-interactive mode
+(i.e., when -i is not given).  The x is a literal lower-case 'x', and n is
+a number greater than or equal to 0.  This causes the segment to be played
+repeatedly and without pause for n times.  If this trailer is not
+specified, the segment is played once.
+.IP
+If n is explicitly set to 0, the segment is repeated "forever," until the
+program is manually terminated by the user.  Any subsequent segments will
+not be played.
+.TP
+.B "-i"
+Request interactive mode.  A window with a movie controller is displayed.
+When this window is closed, the program exits.
+.TP
+.B "-l"
+Turn on looping.  When playback reaches the end, resume playing from the
+beginning.
+.TP
+.B "-p"
+Begin playing immediately on startup, in cases where this is not the
+default behavior.  Specifically, this causes playing to begin on startup in
+interactive mode (-i).
+.TP
+.B "-t"
+Include a specific track by track ID.  This option can be given multiple
+times.  Tracks specified will be included for playback, and all other
+tracks are excluded.
+.IP
+Use the "-T" option below to identify track IDs.
+.TP
+.B "-T"
+For each file given, if it is a media file, print the tracks it contains.
+The program exits after performing this operation.  All playback options
+are ignored, and no file is played.
+.TP
+.B "-v"
+Print program version and exit.  All other options are ignored.
+.SH "MULTIMEDIA CONTROL KEYS"
+The program provides basic support for multimedia control keys on the
+keyboard.
+.TP 2
+.B "play/pause"
+Play if currently paused, or pause if currently playing.
+.TP
+.B "rewind"
+Move to the beginning of the file or range.
+.TP
+.B "fast forward"
+Move to the end of the file or range.  In non-interactive mode, if this
+causes the end of playback to be reached, the program will immediately
+exit.  This is useful for skipping the current file when using the "qpl"
+shell script.
+.SH "EXAMPLES"
+To play an audio file non-interactively:
+.IP
+qp song.mp3
+.PP
+To play only the audio track(s) of a file:
+.IP
+qp -a movie.mp4
+.PP
+To play the first 5 seconds of a file:
+.IP
+qp -g 00:00:00-00:00:05 song.mp3
+.PP
+To play the first 5 seconds of a file repeatedly (until manually
+terminated):
+.IP
+qp -g 00:00:00-00:00:05x0 song.mp3
+.PP
+To play the first 5.333 seconds of a file repeatedly for 5 times:
+.IP
+qp -g 00:00:00-00:00:05.333x5 song.mp3
+.SH "SEE ALSO"
+A shell script named "qpl" is distributed with this program.  It can be
+used to play multiple files, loops, and user-defined play lists.  Detailed
+instructions are provided as comments in the script.

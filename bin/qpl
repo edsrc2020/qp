@@ -1,0 +1,178 @@
+#!/usr/bin/env bash
+
+######################################################################
+# qpl - Play media files using the "qp" player
+#
+# Usage:
+#
+#  qpl file [file...]
+#
+# If "file" ends in the extension ".qpl", it is taken as a text file
+# containing a list of file names, one per line, and they are played
+# in order.  Each line will be double-quoted by this script so you
+# should not escape the names yourself.
+#
+# Otherwise, if the file is a regular file, it is given to "qp" to be
+# played as a media file.  If the file cannot be played, "qp" fails, but
+# playing continues with the next arg.
+#
+# If the file is a directory, the entries in the directory are played
+# sequentially.  Any subdirectories are played recursively.
+#
+# If the file doesn't exist, the argument is ignored.
+#
+# As a special case, if the argument is the word "loop", playing
+# repeats from the starting point indefinitely.  If it has the form
+# "loopn", where n is a number, playing loops back n times, and then
+# continues with the next arg, which becomes the starting point for
+# the next loop spec, if any.  Such looping constructs are also
+# allowed in a ".qpl" file.
+#
+# By default, this script invokes "qp" with no options, and pauses two
+# seconds between files.  You can experiment with the "qp" program's
+# options, and then change the args via the $QPOPT environment variable.
+# You can also set $QPVERBOSE (to any value) to have the script print out
+# the names of files as it plays them.
+#
+# Examples:
+#
+# + play a single file:                     qpl a
+# + play multiple files:                    qpl a b c
+# + loop over files forever:                qpl a b c loop
+# + loop over files twice (total 3 times):  qpl a b c loop2
+# + multiple loops:                         qpl a b c loop1 x y loop2 z loop
+#
+# + set options to "qp":                    export QPOPT="-a"
+######################################################################
+
+
+# You can set options to qp by setting the environment var $QPOPT.
+
+qpopt=${QPOPT:-""}
+
+# The number of seconds to pause between each played file.  Default is
+# 2.  This can be overriden by the $QPPAUSE environment var.
+
+qppause=${QPPAUSE:-"2"}
+
+
+# needed to handle empty directories:
+shopt -s nullglob
+
+
+######################################################################
+# function to play a single directory
+######################################################################
+function play_dir() {
+    local arglist=""
+    for file in "$1"/*; do
+        arglist="$arglist \"$file\""
+    done
+    if [ ! -z "$arglist" ]; then
+        eval main "$arglist"
+    fi
+}
+
+
+######################################################################
+# function to play a .qpl list file
+######################################################################
+function play_list() {
+    local entries=""
+    exec 3<"$1"
+    while [ true ]; do
+        read -u 3
+        if [ -z "$REPLY" ]; then break; fi
+        entries="$entries \"$REPLY\""
+    done
+    exec 3<&-
+    if [ ! -z "$entries" ]; then
+        eval main $entries
+    fi
+}
+
+
+######################################################################
+# function to play a single non-loop arg
+######################################################################
+function play() {
+    if [ ! -z "$QPVERBOSE" ]; then echo "$1"; fi
+    if [ -d "$1" ]; then
+        play_dir "$1"
+    elif [ -f "$1" -a "${1%.qpl}" != "$1" ]; then
+        play_list "$1"
+    elif [ -f "$1" ]; then
+        qp $qpopt "$1"
+        sleep $qppause
+    fi
+}
+
+
+######################################################################
+# function to play a loop; args: start-index end-index repetitions; 0
+# repetitions means forever
+######################################################################
+function play_loop() {
+    local first=$1
+    local  last=$2
+    local  reps=$3
+
+    # echo "looping from $first to $last for $reps repetitions"
+    if [ "$last" -lt "$first" ]; then return; fi
+
+    local rep=1
+    while [ true ]; do
+        local cur=$first
+        while [ true ]; do
+            play "${argv[$cur]}"
+            (( cur++ ))
+            if [ "$cur" -gt "$last" ]; then break; fi
+        done
+        if [ "$reps" -eq "0" ]; then continue; fi
+        (( rep++ ))
+        if [ "$rep" -gt "$reps" ]; then break; fi
+    done
+}
+
+
+######################################################################
+# main function
+######################################################################
+function main() {
+    local argv=""
+    local i=1
+    for file; do
+        argv[${i}]="$file"
+        (( i++ ))
+    done
+
+    i=1
+    local loopstart=1
+    local loopend=0
+
+    while [ true ]; do
+        local arg="${argv[$i]}"
+        if [ -z "$arg" ]; then break; fi
+
+        # do we have a "loop[n]" arg?
+        local loopcount="${arg#loop}"
+        if [ "$arg" = "$loopcount" ]; then
+            # no, play the arg
+            play "$arg";
+        else
+            # yes, play the loop
+            if [ ! -z "$QPVERBOSE" ]; then echo "$arg"; fi
+            (( loopcount += 0 ))
+            (( loopend = i-1 ))
+            play_loop "$loopstart" "$loopend" "$loopcount"
+            (( loopstart = i+1 ))
+        fi
+
+        (( i++ ))
+    done
+}
+
+
+
+
+main "$@"
