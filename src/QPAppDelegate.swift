@@ -82,6 +82,10 @@ class QPAppDelegate : NSObject, NSApplicationDelegate {
       exit(1)
     }
     originalAsset = AVURLAsset(url: URL(fileURLWithPath: filename))
+    if !originalAsset.isPlayable {
+      fprintf(stderr, "Cannot play \"\(filename!)\"\n")
+      exit(1)
+    }
   }
 
   // ---------- LIST TRACKS ----------
