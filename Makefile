@@ -7,6 +7,7 @@ default: release
 # Target for the optimized version
 release: SWIFTC_FLAGS = -DRELEASE -O
 release: $(PROG)
+	strip bin/$(PROG)
 
 # Target for the debuggable version.  This version prints verbose output
 # and is not suitable for normal use.  It is only useful for debugging and
