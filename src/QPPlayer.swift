@@ -236,7 +236,7 @@ class QPPlayer : NSObject {
       self.window.makeKeyAndOrderFront(nil)
       if options.playOnStart {
         debugPrint("Play on start")
-        (self.window.contentView as! AVPlayerView).player!.play()
+        rp.player.play()
       }
     },
     loopCountChangeFunction: { (rp, count) in
