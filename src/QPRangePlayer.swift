@@ -32,9 +32,9 @@ import AVKit
 ///         swapped into the AVPlayerView when this range begins to play.
 ///         This causes a noticeable gap in the playback when transitioning
 ///         from one range to the next.  This gap can probably be avoided
-///         by using a single AVQueuePlayer and swaping the looper for each
-///         range, instead of the entire player.  The author tried that
-///         approach, but failed to make it work.
+///         by using a single AVQueuePlayer and swapping the looper for
+///         each range, instead of the entire player.  The author tried
+///         that approach, but failed to make it work.
 class QPRangePlayer : NSObject {
 
   // ---------- PROPERTIES GIVEN TO THE INITIALIZER ----------
@@ -125,6 +125,13 @@ class QPRangePlayer : NSObject {
       templateItem: AVPlayerItem(asset: self.asset),
       timeRange: CMTimeRange(start: self.startTime, end: self.endTime))
     super.init()
+    // Prevent display sleep if video is being played
+    if #available(macOS 10.14, *) {
+      let hasVideo = asset.tracks(withMediaType: .video).count > 0
+      player.preventsDisplaySleepDuringVideoPlayback = hasVideo
+      debugPrint("preventsDisplaySleepDuringVideoPlayback = "
+                   + "\(player.preventsDisplaySleepDuringVideoPlayback)")
+    }
     // Observe the looper for its eventual ready-to-play status
     looper.addObserver(
       self,
